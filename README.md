@@ -1,4 +1,7 @@
 # knockout.mapping
+
+[![Build Status](https://travis-ci.org/crissdev/knockout.mapping.png?branch=master)](https://travis-ci.org/crissdev/knockout.mapping)
+
 > Object mapping plugin for [Knockout](http://knockoutjs.com/)
 
 
@@ -32,6 +35,11 @@ viewModel.addresses()[0].city('Bucharest');
 var newData = ko.mapping.toJS(viewModel);
 
 ```
+
+## Test
+
+Continuous Integration tests are done with Travis, and the associated Gulp task is `test-ci`.
+For development `test` task is used, which runs the tests against the latest version of Knockout.
 
 
 ## License

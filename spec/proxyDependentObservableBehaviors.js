@@ -1,682 +1,702 @@
 (function() {
-var generateProxyTests = function(useComputed) {
-	var moduleName = useComputed ? 'ProxyComputed' : 'ProxyDependentObservable';
-	module(moduleName);
+    'use strict';
+    /*global ko, QUnit,testStart*/
 
-	var func = function() {
-		var result;
-		result = useComputed ? ko.computed.apply(null, arguments) : ko.dependentObservable.apply(null, arguments);
-		return result;
-	};
+    var generateProxyTests = function(useComputed) {
+        var moduleName = useComputed ? 'ProxyComputed' : 'ProxyDependentObservable';
+        var testInfo;
 
-	testStart[moduleName] = function() {
-		test = {
-			evaluationCount: 0,
-			writeEvaluationCount: 0
-		};
-		test.create = function(createOptions) {
-			var obj = {
-				a: "b"
-			};
+        QUnit.module(moduleName);
 
-			var mapping = {
-				a: {
-					create: function(options) {
-						createOptions = createOptions || {};
-						var mapped = ko.mapping.fromJS(options.data, mapping);
-						
-						var DOdata = function() {
-							test.evaluationCount++;
-							return "test";
-						};
-						if (createOptions.useReadCallback) {
-							mapped.DO = func({
-								read: DOdata,
-								deferEvaluation: !!createOptions.deferEvaluation
-							}, mapped);
-						}
-						else if (createOptions.useWriteCallback) {
-							mapped.DO = func({
-								read: DOdata,
-								write: function(value) { test.written = value; test.writeEvaluationCount++; },
-								deferEvaluation: !!createOptions.deferEvaluation
-							}, mapped);
-						}
-						else {
-							mapped.DO = func(DOdata, mapped, {
-								deferEvaluation: !!createOptions.deferEvaluation
-							});
-						}
-						
-						return mapped;
-					}
-				}
-			};
-			
-			return ko.mapping.fromJS(obj, mapping);
-		};
-	};
+        var func = function() {
+            var result;
+            result = useComputed ? ko.computed.apply(null, arguments) : ko.dependentObservable.apply(null, arguments);
+            return result;
+        };
 
-	test('ko.mapping.fromJS should handle interdependent dependent observables in objects', function() {
-		var obj = {
-			a: { a1: "a1" },
-			b: { b1: "b1" }
-		}
-		
-		var dependencyInvocations = [];
-		
-		var result = ko.mapping.fromJS(obj, {
-			a: {
-				create: function(options) {
-					return {
-						a1: ko.observable(options.data.a1),
-						observeB: func(function() {
-							dependencyInvocations.push("a");
-							return options.parent.b.b1();
-						})
-					}
-				}
-			},
-			b: {
-				create: function(options) {
-					return {
-						b1: ko.observable(options.data.b1),
-						observeA: func(function() {
-							dependencyInvocations.push("b");
-							return options.parent.a.a1();
-						})
-					}
-				},
-			}
-		});
-		
-		equal("b1", result.a.observeB());
-		equal("a1", result.b.observeA());
-	});
+        testStart[moduleName] = function() {
+            testInfo = {
+                evaluationCount: 0,
+                writeEvaluationCount: 0
+            };
+            testInfo.create = function(createOptions) {
+                var obj = {
+                    a: "b"
+                };
 
-	test('ko.mapping.fromJS should handle interdependent dependent observables with read/write callbacks in objects', function() {
-		var obj = {
-			a: { a1: "a1" },
-			b: { b1: "b1" }
-		}
-		
-		var dependencyInvocations = [];
-		
-		var result = ko.mapping.fromJS(obj, {
-			a: {
-				create: function(options) {
-					return {
-						a1: ko.observable(options.data.a1),
-						observeB: func({
-							read: function() {
-								dependencyInvocations.push("a");
-								return options.parent.b.b1();
-							},
-							write: function(value) {
-								options.parent.b.b1(value);
-							}
-						})
-					}
-				}
-			},
-			b: {
-				create: function(options) {
-					return {
-						b1: ko.observable(options.data.b1),
-						observeA: func({
-							read: function() {
-								dependencyInvocations.push("b");
-								return options.parent.a.a1();
-							},
-							write: function(value) {
-								options.parent.a.a1(value);
-							}
-						})
-					}
-				},
-			}
-		});
-		
-		equal(result.a.observeB(), "b1");
-		equal(result.b.observeA(), "a1");
-		
-		result.a.observeB("b2");
-		result.b.observeA("a2");
-		equal(result.a.observeB(), "b2");
-		equal(result.b.observeA(), "a2");
-	});
+                var mapping = {
+                    a: {
+                        create: function(options) {
+                            createOptions = createOptions || {};
+                            var mapped = ko.mapping.fromJS(options.data, mapping);
 
-	test('ko.mapping.fromJS should handle dependent observables in arrays', function() {
-		var obj = {
-			items: [
-				{ id: "a" },
-				{ id: "b" }
-			]
-		}
-		
-		var dependencyInvocations = 0;
-		
-		var result = ko.mapping.fromJS(obj, {
-			"items": {
-				create: function(options) {
-					return {
-						id: ko.observable(options.data.id),
-						observeParent: func(function() {
-							dependencyInvocations++;
-							return options.parent.items().length;
-						})
-					}
-				}
-			}
-		});
-		
-		equal(result.items()[0].observeParent(), 2);
-		equal(result.items()[1].observeParent(), 2);
-	});
+                            var doData = function() {
+                                testInfo.evaluationCount++;
+                                return "test";
+                            };
+                            if (createOptions.useReadCallback) {
+                                mapped.DO = func({
+                                    read: doData,
+                                    deferEvaluation: !!createOptions.deferEvaluation
+                                }, mapped);
+                            }
+                            else if (createOptions.useWriteCallback) {
+                                mapped.DO = func({
+                                    read: doData,
+                                    write: function(value) {
+                                        testInfo.written = value;
+                                        testInfo.writeEvaluationCount++;
+                                    },
+                                    deferEvaluation: !!createOptions.deferEvaluation
+                                }, mapped);
+                            }
+                            else {
+                                mapped.DO = func(doData, mapped, {
+                                    deferEvaluation: !!createOptions.deferEvaluation
+                                });
+                            }
 
-	test('dependentObservables with a write callback are passed through', function() {
-		var mapped = test.create({ useWriteCallback: true });
-		
-		mapped.a.DO("hello");
-		equal(test.written, "hello");
-		equal(test.writeEvaluationCount, 1);
-	});
-	
-	asyncTest('throttleEvaluation is correctly applied', function() {
-		var obj = {
-			a: "hello"
-		};
-	
-		var dependency = ko.observable(0);
-		var mapped = ko.mapping.fromJS(obj, {
-			a: {
-				create: function() {
-					var f = func(function() {
-						dependency(dependency() + 1);
-						return dependency();
-					});
-					var ex = f.extend({ throttle: 1 });
-					return ex;
-				}
-			}
-		});
-		
-		// Even though the dependency updates many times, it should be throttled to only one update
-		dependency.valueHasMutated();
-		dependency.valueHasMutated();
-		dependency.valueHasMutated();
-		dependency.valueHasMutated();
-		
-		window.setTimeout(function() {
-			start();
-			equal(mapped.a(), 1);
-		}, 1);
-	});
-	
-	test('dependentObservables without a write callback do not get a write callback', function() {
-		var mapped = test.create({ useWriteCallback: false });
-		
-		var caught = false;
-		try {
-			mapped.a.DO("hello");
-		} catch(e) {
-			caught = true;
-		}
-		equal(caught, true);
-	});
-	
-	asyncTest('undeferred dependentObservables that are NOT used immediately SHOULD be auto-evaluated after mapping', function() {
-		var mapped = test.create();
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 1);
-		}, 0);
-	});
+                            return mapped;
+                        }
+                    }
+                };
 
-	asyncTest('undeferred dependentObservables that ARE used immediately should NOT be auto-evaluated after mapping', function() {
-		var mapped = test.create();
-		equal(ko.utils.unwrapObservable(mapped.a.DO), "test");
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 1);
-		}, 0);
-	});
+                return ko.mapping.fromJS(obj, mapping);
+            };
+        };
 
-	asyncTest('deferred dependentObservables should NOT be auto-evaluated after mapping', function() {
-		var mapped = test.create({ deferEvaluation: true });
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 0);
-		}, 0);
-	});
+        QUnit.test('ko.mapping.fromJS should handle interdependent dependent observables in objects', function(assert) {
+            var obj = {
+                a: {a1: "a1"},
+                b: {b1: "b1"}
+            };
 
-	asyncTest('undeferred dependentObservables with read callback that are NOT used immediately SHOULD be auto-evaluated after mapping', function() {
-		var mapped = test.create({ useReadCallback: true });
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 1);
-		}, 0);
-	});
+            var dependencyInvocations = [];
 
-	asyncTest('undeferred dependentObservables with read callback that ARE used immediately should NOT be auto-evaluated after mapping', function() {
-		var mapped = test.create({ useReadCallback: true });
-		equal(ko.utils.unwrapObservable(mapped.a.DO), "test");
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 1);
-		}, 0);
-	});
+            var result = ko.mapping.fromJS(obj, {
+                a: {
+                    create: function(options) {
+                        return {
+                            a1: ko.observable(options.data.a1),
+                            observeB: func(function() {
+                                dependencyInvocations.push("a");
+                                return options.parent.b.b1();
+                            })
+                        };
+                    }
+                },
+                b: {
+                    create: function(options) {
+                        return {
+                            b1: ko.observable(options.data.b1),
+                            observeA: func(function() {
+                                dependencyInvocations.push("b");
+                                return options.parent.a.a1();
+                            })
+                        };
+                    }
+                }
+            });
 
-	asyncTest('deferred dependentObservables with read callback should NOT be auto-evaluated after mapping', function() {
-		var mapped = test.create({ deferEvaluation: true, useReadCallback: true });
-		window.setTimeout(function() {
-			start();
-			equal(test.evaluationCount, 0);
-		}, 0);
-	});
+            assert.equal("b1", result.a.observeB());
+            assert.equal("a1", result.b.observeA());
+        });
 
-	test('can subscribe to proxy dependentObservable', function() {
-		expect(0);
-		var mapped = test.create({ deferEvaluation: true, useReadCallback: true });
-		var subscriptionTriggered = false;
-		mapped.a.DO.subscribe(function() {
-		});
-	});
+        QUnit.test('ko.mapping.fromJS should handle interdependent dependent observables with read/write callbacks in objects', function(assert) {
+            var obj = {
+                a: {a1: "a1"},
+                b: {b1: "b1"}
+            };
 
-	test('can subscribe to nested proxy dependentObservable', function() {
-		var obj = {
-			a: { b: null }
-		};
+            var dependencyInvocations = [];
 
-		var DOsubscribedVal ;
-		var mapping = {
-			a: {
-				create: function(options) {
-					var mappedB = ko.mapping.fromJS(options.data, {
-						create: function(options) {
-							//In KO writable computed observables have to be backed by an observable
-							//otherwise they won't be notified they need updating. see: http://jsfiddle.net/drdamour/9Pz4m/ 
-							var DOval = ko.observable(undefined);
-							
-							var m = {};
-							m.myValue = ko.observable("myValue");
-							m.DO = func({
-								read: function() {
-									return DOval();
-								},
-								write: function(val) {
-									DOval(val);
-								}
-							});
-							m.readOnlyDO = func(function() {
-								return m.myValue();
-							});
-							return m;
-						}
-					});
-					mappedB.DO.subscribe(function(val) {
-						DOsubscribedVal = val;
-					});
-					return mappedB;
-				}
-			}
-		};
-		
-		var mapped = ko.mapping.fromJS(obj, mapping);
-		mapped.a.DO("bob");
-		equal(ko.utils.unwrapObservable(mapped.a.readOnlyDO), "myValue");
-		equal(ko.utils.unwrapObservable(mapped.a.DO), "bob");
-		equal(DOsubscribedVal, "bob");
-	});
-	
+            var result = ko.mapping.fromJS(obj, {
+                a: {
+                    create: function(options) {
+                        return {
+                            a1: ko.observable(options.data.a1),
+                            observeB: func({
+                                read: function() {
+                                    dependencyInvocations.push("a");
+                                    return options.parent.b.b1();
+                                },
+                                write: function(value) {
+                                    options.parent.b.b1(value);
+                                }
+                            })
+                        };
+                    }
+                },
+                b: {
+                    create: function(options) {
+                        return {
+                            b1: ko.observable(options.data.b1),
+                            observeA: func({
+                                read: function() {
+                                    dependencyInvocations.push("b");
+                                    return options.parent.a.a1();
+                                },
+                                write: function(value) {
+                                    options.parent.a.a1(value);
+                                }
+                            })
+                        };
+                    }
+                }
+            });
 
-	test('dependentObservable dependencies trigger subscribers', function() {
-		var obj = {
-			inner: {
-				dependency: 1
-			}
-		};
-		
-		var inner = function(data) {
-			var _this = this;
-			ko.mapping.fromJS(data, {}, _this);
-			
-			_this.DO = func(function() {
-				_this.dependency();
-			});
+            assert.equal(result.a.observeB(), "b1");
+            assert.equal(result.b.observeA(), "a1");
 
-			_this.evaluationCount = 0;
-			_this.DO.subscribe(function() {
-				_this.evaluationCount++;
-			});
-		};
-		
-		var mapping = {
-			inner: {
-				create: function(options) {
-					return new inner(options.data);
-				}
-			}
-		};
-		
-		var mapped = ko.mapping.fromJS(obj, mapping);
-		var i = mapped.inner;
-		equal(i.evaluationCount, 1); //it's evaluated once prior to fromJS returning
+            result.a.observeB("b2");
+            result.b.observeA("a2");
+            assert.equal(result.a.observeB(), "b2");
+            assert.equal(result.b.observeA(), "a2");
+        });
 
-		// change the dependency
-		i.dependency(2);
-			
-		// should also have re-evaluated
-		equal(i.evaluationCount, 2);
-	});
+        QUnit.test('ko.mapping.fromJS should handle dependent observables in arrays', function(assert) {
+            var obj = {
+                items: [
+                    {id: "a"},
+                    {id: "b"}
+                ]
+            };
 
+            var dependencyInvocations = 0;
 
-	//taken from outline defined at https://github.com/SteveSanderson/knockout.mapping/issues/95#issuecomment-12275070
-	test('dependentObservable evaluation is defferred until mapping takes place', function() {
-		var model = {
-			a: { name: "a" },
-  			b: { name: "b" }
-		};
-		
-		var MyClassA = function(data, parent) {
-			var _this = this;
+            var result = ko.mapping.fromJS(obj, {
+                "items": {
+                    create: function(options) {
+                        return {
+                            id: ko.observable(options.data.id),
+                            observeParent: func(function() {
+                                dependencyInvocations++;
+                                return options.parent.items().length;
+                            })
+                        };
+                    }
+                }
+            });
 
-			ko.mapping.fromJS(data, {}, _this);
+            assert.equal(result.items()[0].observeParent(), 2);
+            assert.equal(result.items()[1].observeParent(), 2);
+        });
 
-			_this.DO = func(function() {
-				//Depends on b, which may not be there yet
-				return _this.name() + parent.b.name(); 
-			});
-		};
+        QUnit.test('dependentObservables with a write callback are passed through', function(assert) {
+            var mapped = testInfo.create({useWriteCallback: true});
 
-		var MyClassB = function(data, parent) {
-			var _this = this;
+            mapped.a.DO("hello");
+            assert.equal(testInfo.written, "hello");
+            assert.equal(testInfo.writeEvaluationCount, 1);
+        });
 
-			ko.mapping.fromJS(data, {}, _this);
+        QUnit.test('throttleEvaluation is correctly applied', function(assert) {
+            var done = assert.async();
+            assert.expect(1);
 
-			_this.DO = func(function() {
-				//depends on a, which may not be there yet
-				return _this.name() + parent.a.name(); 
-			});
-		};
+            var obj = {
+                a: "hello"
+            };
 
+            var dependency = ko.observable(0);
+            var mapped = ko.mapping.fromJS(obj, {
+                a: {
+                    create: function() {
+                        var f = func(function() {
+                            dependency(dependency() + 1);
+                            return dependency();
+                        });
+                        var ex = f.extend({throttle: 1});
+                        return ex;
+                    }
+                }
+            });
 
-		var mapping = {
-			a: {
-				create: function(options) {
-					return new MyClassA(options.data, options.parent);
-				}
-			},
-			b: {
-				create: function(options) {
-					return new MyClassB(options.data, options.parent);
-				}
-			}
-		}
+            // Even though the dependency updates many times, it should be throttled to only one update
+            dependency.valueHasMutated();
+            dependency.valueHasMutated();
+            dependency.valueHasMutated();
+            dependency.valueHasMutated();
 
+            window.setTimeout(function() {
+                assert.equal(mapped.a(), 1);
+                done();
+            }, 1);
+        });
 
-		
-		var mappedVM = ko.mapping.fromJS(model, mapping);
+        QUnit.test('dependentObservables without a write callback do not get a write callback', function(assert) {
+            var mapped = testInfo.create({useWriteCallback: false});
 
+            var caught = false;
+            try {
+                mapped.a.DO("hello");
+            }
+            catch (e) {
+                caught = true;
+            }
+            assert.equal(caught, true);
+        });
 
-		equal(mappedVM.a.DO(), "ab");
-		equal(mappedVM.b.DO(), "ba");
-	});
-	
-	test('dependentObservable mappingNesting is reset after exception', function() {
-		var model = {
-			a: { name: "a" }
-		};
+        QUnit.test('undeferred dependentObservables that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(1);
 
-		//First we throw a custom exception in the nested create and make sure it does throw
-		function CustomError( message ) {
-    		this.message = message;
-  		}
-  		CustomError.prototype.toString = function() {
-    		return this.message;
-  		};
+            var mapped = testInfo.create();
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 1);
+                done();
+            }, 0);
+        });
 
-		throws( 
-			function()
-			{
-				ko.mapping.fromJS(model, {
-					create:function(){ throw new CustomError("Create Threw");}
-				});
-			},
-			CustomError ,
-			"fromJS throws correct 'CustomError' error type"
-		);
+        QUnit.test('undeferred dependentObservables that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(2);
+
+            var mapped = testInfo.create();
+            assert.equal(ko.utils.unwrapObservable(mapped.a.DO), "test");
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 1);
+                done();
+            }, 0);
+        });
+
+        QUnit.test('deferred dependentObservables should NOT be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(1);
+
+            var mapped = testInfo.create({deferEvaluation: true});
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 0);
+                done();
+            }, 0);
+        });
+
+        QUnit.test('undeferred dependentObservables with read callback that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(1);
+
+            var mapped = testInfo.create({useReadCallback: true});
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 1);
+                done();
+            }, 0);
+        });
+
+        QUnit.test('undeferred dependentObservables with read callback that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(2);
+
+            var mapped = testInfo.create({useReadCallback: true});
+            assert.equal(ko.utils.unwrapObservable(mapped.a.DO), "test");
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 1);
+                done();
+            }, 0);
+        });
+
+        QUnit.test('deferred dependentObservables with read callback should NOT be auto-evaluated after mapping', function(assert) {
+            var done = assert.async();
+            assert.expect(1);
+
+            var mapped = testInfo.create({deferEvaluation: true, useReadCallback: true});
+            window.setTimeout(function() {
+                assert.equal(testInfo.evaluationCount, 0);
+                done();
+            }, 0);
+        });
+
+        QUnit.test('can subscribe to proxy dependentObservable', function(assert) {
+            assert.expect(0);
+            var mapped = testInfo.create({deferEvaluation: true, useReadCallback: true});
+            var subscriptionTriggered = false;
+            mapped.a.DO.subscribe(function() {
+            });
+        });
+
+        QUnit.test('can subscribe to nested proxy dependentObservable', function(assert) {
+            var obj = {
+                a: {b: null}
+            };
+
+            var DOsubscribedVal;
+            var mapping = {
+                a: {
+                    create: function(options) {
+                        var mappedB = ko.mapping.fromJS(options.data, {
+                            create: function(options) {
+                                //In KO writable computed observables have to be backed by an observable
+                                //otherwise they won't be notified they need updating. see: http://jsfiddle.net/drdamour/9Pz4m/
+                                var DOval = ko.observable(undefined);
+
+                                var m = {};
+                                m.myValue = ko.observable("myValue");
+                                m.DO = func({
+                                    read: function() {
+                                        return DOval();
+                                    },
+                                    write: function(val) {
+                                        DOval(val);
+                                    }
+                                });
+                                m.readOnlyDO = func(function() {
+                                    return m.myValue();
+                                });
+                                return m;
+                            }
+                        });
+                        mappedB.DO.subscribe(function(val) {
+                            DOsubscribedVal = val;
+                        });
+                        return mappedB;
+                    }
+                }
+            };
+
+            var mapped = ko.mapping.fromJS(obj, mapping);
+            mapped.a.DO("bob");
+            assert.equal(ko.utils.unwrapObservable(mapped.a.readOnlyDO), "myValue");
+            assert.equal(ko.utils.unwrapObservable(mapped.a.DO), "bob");
+            assert.equal(DOsubscribedVal, "bob");
+        });
+
+        QUnit.test('dependentObservable dependencies trigger subscribers', function(assert) {
+            var obj = {
+                inner: {
+                    dependency: 1
+                }
+            };
+
+            var Inner = function(data) {
+                var _this = this;
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO = func(function() {
+                    _this.dependency();
+                });
+
+                _this.evaluationCount = 0;
+                _this.DO.subscribe(function() {
+                    _this.evaluationCount++;
+                });
+            };
+
+            var mapping = {
+                inner: {
+                    create: function(options) {
+                        return new Inner(options.data);
+                    }
+                }
+            };
+
+            var mapped = ko.mapping.fromJS(obj, mapping);
+            var i = mapped.inner;
+            assert.equal(i.evaluationCount, 1); //it's evaluated once prior to fromJS returning
+
+            // change the dependency
+            i.dependency(2);
+
+            // should also have re-evaluated
+            assert.equal(i.evaluationCount, 2);
+        });
+
+        //taken from outline defined at https://github.com/SteveSanderson/knockout.mapping/issues/95#issuecomment-12275070
+        QUnit.test('dependentObservable evaluation is defferred until mapping takes place', function(assert) {
+            var model = {
+                a: {name: "a"},
+                b: {name: "b"}
+            };
+
+            var MyClassA = function(data, parent) {
+                var _this = this;
+
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO = func(function() {
+                    //Depends on b, which may not be there yet
+                    return _this.name() + parent.b.name();
+                });
+            };
+
+            var MyClassB = function(data, parent) {
+                var _this = this;
+
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO = func(function() {
+                    //depends on a, which may not be there yet
+                    return _this.name() + parent.a.name();
+                });
+            };
 
 
-		//Second make sure mappingNesting was reset.
-		//if mappingNesting wasn't reset the DO wouldn't have been evaluated before fromJS returning
-		var obj = {
-			inner: {
-				dependency: 1
-			}
-		};
-		
-		var inner = function(data) {
-			var _this = this;
-			ko.mapping.fromJS(data, {}, _this);
-			
-			_this.DO = func(function() {
-				_this.dependency();
-			});
+            var mapping = {
+                a: {
+                    create: function(options) {
+                        return new MyClassA(options.data, options.parent);
+                    }
+                },
+                b: {
+                    create: function(options) {
+                        return new MyClassB(options.data, options.parent);
+                    }
+                }
+            };
 
-			_this.evaluationCount = 0;
-			_this.DO.subscribe(function() {
-				_this.evaluationCount++;
-			});
-		};
-		
-		var mapping = {
-			inner: {
-				create: function(options) {
-					return new inner(options.data);
-				}
-			}
-		};
-		
-		var mapped = ko.mapping.fromJS(obj, mapping);
-		var i = mapped.inner;
-		equal(i.evaluationCount, 1); //it's evaluated once prior to fromJS returning
+            var mappedVM = ko.mapping.fromJS(model, mapping);
 
-	});
+            assert.equal(mappedVM.a.DO(), "ab");
+            assert.equal(mappedVM.b.DO(), "ba");
+        });
 
-	test('dependentObservable evaluation for nested is defferred until after mapping takes place', function() {
-		var model = {
-			a: { 
-				name: "a", 
-  				c : {name: "c"} //nested 
-			},
-  			b: { 
-  				name: "b"
-  			}
-		};
-		
-		var MyClassA = function(data, parent) {
-			var _this = this;
+        QUnit.test('dependentObservable mappingNesting is reset after exception', function(assert) {
+            var model = {
+                a: {name: "a"}
+            };
 
-			var mapping = {
-				c: {
-					create: function(options) {
-						return new MyClassC(options.data, options.parent, parent); //last param parent here is C's grandparent
-					}
-				}
-			};
+            //First we throw a custom exception in the nested create and make sure it does throw
+            function CustomError(message) {
+                this.message = message;
+            }
 
-			ko.mapping.fromJS(data, mapping, _this);
+            CustomError.prototype.toString = function() {
+                return this.message;
+            };
 
-			_this.DO = func(function() {
-				//Depends on b, which may not be there yet
-				return _this.name() + parent.b.name(); 
-			});
-		};
+            assert.throws(
+                function() {
+                    ko.mapping.fromJS(model, {
+                        create: function() {
+                            throw new CustomError("Create Threw");
+                        }
+                    });
+                },
+                CustomError,
+                "fromJS throws correct 'CustomError' error type");
 
-		var MyClassB = function(data, parent) {
-			var _this = this;
+            //Second make sure mappingNesting was reset.
+            //if mappingNesting wasn't reset the DO wouldn't have been evaluated before fromJS returning
+            var obj = {
+                inner: {
+                    dependency: 1
+                }
+            };
 
-			ko.mapping.fromJS(data, {}, _this);
+            var inner = function(data) {
+                var _this = this;
+                ko.mapping.fromJS(data, {}, _this);
 
-			_this.DO = func(function() {
-				//depends on a, which may not be there yet
-				return _this.name() + parent.a.name(); 
-			});
-		};
+                _this.DO = func(function() {
+                    _this.dependency();
+                });
 
-		var MyClassC = function(data, parent, grandparent) {
-			var _this = this;
+                _this.evaluationCount = 0;
+                _this.DO.subscribe(function() {
+                    _this.evaluationCount++;
+                });
+            };
 
-			ko.mapping.fromJS(data, {}, _this);
+            var mapping = {
+                inner: {
+                    create: function(options) {
+                        return new inner(options.data);
+                    }
+                }
+            };
 
-			_this.DO = func(function() {
-				//depends on a, which may not be there yet
-				return _this.name() + parent.name() + grandparent.a.name() + grandparent.b.name() ; 
-			});
-		};
+            var mapped = ko.mapping.fromJS(obj, mapping);
+            var i = mapped.inner;
+            assert.equal(i.evaluationCount, 1); //it's evaluated once prior to fromJS returning
+        });
+
+        QUnit.test('dependentObservable evaluation for nested is defferred until after mapping takes place', function(assert) {
+            var model = {
+                a: {
+                    name: "a",
+                    c: {name: "c"} //nested
+                },
+                b: {
+                    name: "b"
+                }
+            };
+
+            var MyClassA = function(data, parent) {
+                var _this = this;
+
+                var mapping = {
+                    c: {
+                        create: function(options) {
+                            return new MyClassC(options.data, options.parent, parent); //last param parent here is C's grandparent
+                        }
+                    }
+                };
+
+                ko.mapping.fromJS(data, mapping, _this);
+
+                _this.DO = func(function() {
+                    //Depends on b, which may not be there yet
+                    return _this.name() + parent.b.name();
+                });
+            };
+
+            var MyClassB = function(data, parent) {
+                var _this = this;
+
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO = func(function() {
+                    //depends on a, which may not be there yet
+                    return _this.name() + parent.a.name();
+                });
+            };
+
+            var MyClassC = function(data, parent, grandparent) {
+                var _this = this;
+
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO = func(function() {
+                    //depends on a, which may not be there yet
+                    return _this.name() + parent.name() + grandparent.a.name() + grandparent.b.name();
+                });
+            };
 
 
-		var mapping = {
-			a: {
-				create: function(options) {
-					return new MyClassA(options.data, options.parent);
-				}
-			},
-			b: {
-				create: function(options) {
-					return new MyClassB(options.data, options.parent);
-				}
-			},
-			c: {
-				create: function(options) {
-					return new MyClassC(options.data, options.parent);
-				}
+            var mapping = {
+                a: {
+                    create: function(options) {
+                        return new MyClassA(options.data, options.parent);
+                    }
+                },
+                b: {
+                    create: function(options) {
+                        return new MyClassB(options.data, options.parent);
+                    }
+                },
+                c: {
+                    create: function(options) {
+                        return new MyClassC(options.data, options.parent);
+                    }
 
-			}
-		}
+                }
+            };
 
-		var mappedVM = ko.mapping.fromJS(model, mapping);
-
-
-		equal(mappedVM.a.DO(), "ab");
-		equal(mappedVM.b.DO(), "ba");
-		equal(mappedVM.a.c.DO(), "caab");
-	});
+            var mappedVM = ko.mapping.fromJS(model, mapping);
 
 
-	test('dependentObservable.fn extensions are not missing during mapping', function() {
-		var obj = {
-			x: 1
-		};
+            assert.equal(mappedVM.a.DO(), "ab");
+            assert.equal(mappedVM.b.DO(), "ba");
+            assert.equal(mappedVM.a.c.DO(), "caab");
+        });
 
-		var model = function(data) {
-			var _this = this;
+        QUnit.test('dependentObservable.fn extensions are not missing during mapping', function(assert) {
+            var obj = {
+                x: 1
+            };
 
-			ko.mapping.fromJS(data, {}, _this);
-			
-			_this.DO = func(_this.x);
-		};
+            var model = function(data) {
+                var _this = this;
 
-		var mapping = {
-			create: function(options) {
-				return new model(options.data);
-			}
-		};
-		
-		ko.dependentObservable.fn.myExtension = true;
-		
-		var mapped = ko.mapping.fromJS(obj, mapping);
-		
-		equal(mapped.DO.myExtension, true)
-	});
-	
-	test('Dont wrap dependent observables if already marked as deferEvaluation', function() {
-		var obj = {
-			x: 1
-		};
+                ko.mapping.fromJS(data, {}, _this);
 
-		var model = function(data) {
-			var _this = this;
+                _this.DO = func(_this.x);
+            };
 
-			ko.mapping.fromJS(data, {}, _this);
-			
-			_this.DO1 = func(_this.x, null, {deferEvaluation: true});
-			_this.DO2 = func({read: _this.x, deferEvaluation: true});
-			_this.DO3 = func(_this.x);
-		};
+            var mapping = {
+                create: function(options) {
+                    return new model(options.data);
+                }
+            };
 
-		var mapping = {
-			create: function(options) {
-				return new model(options.data);
-			}
-		};
-		
-		var mapped = ko.mapping.fromJS(obj, mapping);
-		
-		equal(mapped.DO1._wrapper, undefined);
-		equal(mapped.DO2._wrapper, undefined);
-		equal(mapped.DO3._wrapper, true);
-	});
-	
-	test('ko.mapping.updateViewModel should allow for the avoidance of adding an item to its parent observableArray', function() {
-		var obj = {
-			items: [
-				{ id: "a" },
-				{ id: "b" }
-			]
-		}
-		
-		var dependencyInvocations = 0;
-		
-		var result = ko.mapping.fromJS(obj, {
-			"items": {
-				create: function(options) {
-					if (options.data.id == "b")
-						return options.data;
-					else 
-						return options.skip;
-				}
-			}
-		});
-		
-		
-		equal(result.items().length, 1);
-		equal(result.items()[0].id, "b");
-		
-	});
+            ko.dependentObservable.fn.myExtension = true;
 
-	//unit test for updating existing arrays (e.g. first item is retained, second item is skipped and the third item gets added)?
-	test('ko.mapping.updateViewModel skipping an item should retain all other items', function() {
-		var obj = {
-			items: [
-				{ id: "a" },
-				{ id: "b" },
-				{ id: "c" }
-			]
-		}
-		
-		var dependencyInvocations = 0;
-		
-		var result = ko.mapping.fromJS(obj, {
-			"items": {
-				create: function(options) {
-					if (options.data.id == "b")
-						return options.skip;
-					else 
-						return options.data;
-				}
-			}
-		});
-		
-		
-		equal(result.items().length, 2);
-		equal(result.items()[0].id, "a");
-		equal(result.items()[1].id, "c");
-		
-	});
-};
+            var mapped = ko.mapping.fromJS(obj, mapping);
 
-generateProxyTests(false);
-generateProxyTests(true);
+            assert.equal(mapped.DO.myExtension, true)
+        });
+
+        QUnit.test('Dont wrap dependent observables if already marked as deferEvaluation', function(assert) {
+            var obj = {
+                x: 1
+            };
+
+            function Model(data) {
+                var _this = this;
+
+                ko.mapping.fromJS(data, {}, _this);
+
+                _this.DO1 = func(_this.x, null, {deferEvaluation: true});
+                _this.DO2 = func({read: _this.x, deferEvaluation: true});
+                _this.DO3 = func(_this.x);
+            }
+
+            var mapping = {
+                create: function(options) {
+                    return new Model(options.data);
+                }
+            };
+
+            var mapped = ko.mapping.fromJS(obj, mapping);
+
+            assert.equal(mapped.DO1._wrapper, undefined);
+            assert.equal(mapped.DO2._wrapper, undefined);
+            assert.equal(mapped.DO3._wrapper, true);
+        });
+
+        QUnit.test('ko.mapping.updateViewModel should allow for the avoidance of adding an item to its parent observableArray', function(assert) {
+            var obj = {
+                items: [
+                    {id: "a"},
+                    {id: "b"}
+                ]
+            };
+
+            var dependencyInvocations = 0;
+
+            var result = ko.mapping.fromJS(obj, {
+                "items": {
+                    create: function(options) {
+                        if (options.data.id == "b")
+                            return options.data;
+                        else
+                            return options.skip;
+                    }
+                }
+            });
+
+            assert.equal(result.items().length, 1);
+            assert.equal(result.items()[0].id, "b");
+        });
+
+        //unit test for updating existing arrays (e.g. first item is retained, second item is skipped and the third item gets added)?
+        QUnit.test('ko.mapping.updateViewModel skipping an item should retain all other items', function(assert) {
+            var obj = {
+                items: [
+                    {id: "a"},
+                    {id: "b"},
+                    {id: "c"}
+                ]
+            };
+
+            var dependencyInvocations = 0;
+
+            var result = ko.mapping.fromJS(obj, {
+                "items": {
+                    create: function(options) {
+                        if (options.data.id == "b")
+                            return options.skip;
+                        else
+                            return options.data;
+                    }
+                }
+            });
+
+
+            assert.equal(result.items().length, 2);
+            assert.equal(result.items()[0].id, "a");
+            assert.equal(result.items()[1].id, "c");
+        });
+    };
+
+    generateProxyTests(false);
+    generateProxyTests(true);
 })();

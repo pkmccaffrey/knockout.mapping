@@ -1,316 +1,328 @@
-module('Integration tests');
+'use strict';
+/*global ko, QUnit*/
 
-test('Store', function() {
-	function Product(data) {
-		
-		var viewModel = {
-			guid: ko.observable(),
-			name : ko.observable()
-		};
-		
-		ko.mapping.fromJS(data, {}, viewModel);
-		
-		return viewModel;
-	}
+QUnit.module('Integration tests');
 
-	Store = function(data) {
-		data = data || {};
-		var mapping = {
-				Products: {
-					key: function(data) {
-						return ko.utils.unwrapObservable(data.guid);
-					},
-					create: function(options) {
-						return new Product(options.data);
-					}
-				},
-			
-				Selected: {
-					update: function(options) {
-						return ko.utils.arrayFirst(viewModel.Products(), function(p) {
-							return p.guid() == options.data.guid;
-						});
-					}
-				}
-			};
+QUnit.test('Store', function(assert) {
+    function Product(data) {
+        var viewModel = {
+            guid: ko.observable(),
+            name: ko.observable()
+        };
 
-		var viewModel = {
-			Products: ko.observableArray(),
-			Selected : ko.observable()
-		};
+        ko.mapping.fromJS(data, {}, viewModel);
 
-		ko.mapping.fromJS(data, mapping, viewModel);
-		
-		return viewModel;
-	};
+        return viewModel;
+    }
 
-	var jsData = {
-		"Products": [
-			{ "guid": "01", "name": "Product1" },
-			{ "guid": "02", "name": "Product2" },
-			{ "guid": "03", "name": "Product3" }
-		],
-		"Selected": { "guid": "02" }
-	};
-	var viewModel = new Store(jsData);
-	equal(viewModel.Selected().name(), "Product2");
+    function Store(data) {
+        data = data || {};
+        var mapping = {
+            Products: {
+                key: function(data) {
+                    return ko.utils.unwrapObservable(data.guid);
+                },
+                create: function(options) {
+                    return new Product(options.data);
+                }
+            },
+
+            Selected: {
+                update: function(options) {
+                    return ko.utils.arrayFirst(viewModel.Products(), function(p) {
+                        return p.guid() === options.data.guid;
+                    });
+                }
+            }
+        };
+
+        var viewModel = {
+            Products: ko.observableArray(),
+            Selected: ko.observable()
+        };
+
+        ko.mapping.fromJS(data, mapping, viewModel);
+
+        return viewModel;
+    }
+
+    var jsData = {
+        "Products": [
+            {"guid": "01", "name": "Product1"},
+            {"guid": "02", "name": "Product2"},
+            {"guid": "03", "name": "Product3"}
+        ],
+        "Selected": {"guid": "02"}
+    };
+    var viewModel = new Store(jsData);
+    assert.equal(viewModel.Selected().name(), "Product2");
 });
 
 //https://github.com/SteveSanderson/knockout.mapping/issues/34
-test('Issue #34', function() {
-	var importData = function(dataArray, target) {
-		var mapping = {
-			"create": function( options ) {
-				return options.data;
-			}
-		};
+QUnit.test('Issue #34', function(assert) {
+    var importData = function(dataArray, target) {
+        var mapping = {
+            "create": function(options) {
+                return options.data;
+            }
+        };
+        return ko.mapping.fromJS(dataArray, mapping, target);
+    };
 
-		return ko.mapping.fromJS(dataArray, mapping, target);
-	};
+    var viewModel = {
+        things: ko.observableArray([]),
+        load: function() {
+            var rows = [
+                {id: 1}
+            ];
+            importData(rows, viewModel.things);
+        }
+    };
 
-	var viewModel = {
-		things: ko.observableArray( [] ),
-		load: function() {
-			var rows = [
-				{ id: 1 }
-			];
-	
-			importData(rows, viewModel.things);
-		}
-	};
-	
-	viewModel.load();
-	viewModel.load();
-	viewModel.load();
+    viewModel.load();
+    viewModel.load();
+    viewModel.load();
 
-	deepEqual(viewModel.things(), [{"id":1}]);
+    assert.deepEqual(viewModel.things(), [{"id": 1}]);
 });
 
-test('Adding large amounts of items to array is slow', function() {
-	expect(0);
+//TODO: Inconclusive test
+QUnit.test('Adding large amounts of items to array is slow', function(assert) {
+    assert.expect(0);
 
-	var numItems = 5000;
-	var data = [];
-	for (var t=0;t<numItems;t++) {
-		data.push({ id: t });
-	}
-	
-	var mapped = ko.mapping.fromJS(data, {
-		key: function(data) {
-			return ko.utils.unwrapObservable(data).id;
-		}
-	});
+    var numItems = 5000;
+    var data = [];
+    for (var t = 0; t < numItems; t++) {
+        data.push({id: t});
+    }
+
+    ko.mapping.fromJS(data, {
+        key: function(data) {
+            return ko.utils.unwrapObservable(data).id;
+        }
+    });
 });
 
-test('Issue #87', function() {
-	var Item = function(data) {
-		var _this = this;
+QUnit.test('Issue #87', function(assert) {
+    var Item = function(data) {
+        var _this = this;
 
-		var mapping = {
-			include: ["name"]
-		};
+        var mapping = {
+            include: ["name"]
+        };
 
-		data = data || {};
-		_this.name = ko.observable(data.name || "c");
+        data = data || {};
+        _this.name = ko.observable(data.name || "c");
 
-		ko.mapping.fromJS(data, mapping, _this);
-	};
+        ko.mapping.fromJS(data, mapping, _this);
+    };
 
-	var Container = function(data) {
-		var _this = this;
+    var Container = function(data) {
+        var _this = this;
 
-		var mapping = {
-			items: {
-				create: function(options) {
-					return new Item(options.data);
-				}
-			}
-		};
+        var mapping = {
+            items: {
+                create: function(options) {
+                    return new Item(options.data);
+                }
+            }
+        };
 
-		_this.addItem = function() {
-			_this.items.push(new Item());
-		};
+        _this.addItem = function() {
+            _this.items.push(new Item());
+        };
 
-		ko.mapping.fromJS(data, mapping, _this);
-	};
+        ko.mapping.fromJS(data, mapping, _this);
+    };
 
-	var data = {
-		items: [
-			{ name: "a" },
-			{ name: "b" }
-		]
-	};
+    var data = {
+        items: [
+            {name: "a"},
+            {name: "b"}
+        ]
+    };
 
-	var mapped = new Container(data);
+    var mapped = new Container(data);
 
-	mapped.addItem();
-	equal(mapped.items().length, 3);
-	equal(mapped.items()[0].name(), "a");
-	equal(mapped.items()[1].name(), "b");
-	equal(mapped.items()[2].name(), "c");
+    mapped.addItem();
+    assert.equal(mapped.items().length, 3);
+    assert.equal(mapped.items()[0].name(), "a");
+    assert.equal(mapped.items()[1].name(), "b");
+    assert.equal(mapped.items()[2].name(), "c");
 
-	var unmapped = ko.mapping.toJS(mapped);
-	equal(unmapped.items.length, 3);
-	equal(unmapped.items[0].name, "a");
-	equal(unmapped.items[1].name, "b");
-	equal(unmapped.items[2].name, "c");
+    var unmapped = ko.mapping.toJS(mapped);
+    assert.equal(unmapped.items.length, 3);
+    assert.equal(unmapped.items[0].name, "a");
+    assert.equal(unmapped.items[1].name, "b");
+    assert.equal(unmapped.items[2].name, "c");
 });
 
-test('Issue #88', function() {
-	var ViewModel = function(data) {
-	    ko.mapping.fromJS(data, {
-	        copy: ["id"]
-	    }, this);
+QUnit.test('Issue #88', function(assert) {
+    var ViewModel = function(data) {
+        ko.mapping.fromJS(data, {
+            copy: ["id"]
+        }, this);
 
-	    this.reference = ko.observable(this);
-	};
+        this.reference = ko.observable(this);
+    };
 
-	var viewModel = new ViewModel({"id":123, "name":"Alice"});
-	var unmapped;
+    var viewModel = new ViewModel({"id": 123, "name": "Alice"});
+    var unmapped;
 
-	unmapped = ko.mapping.toJS(viewModel);
-	equal(unmapped.id, 123);
-	equal(unmapped.name, "Alice");
+    unmapped = ko.mapping.toJS(viewModel);
+    assert.equal(unmapped.id, 123);
+    assert.equal(unmapped.name, "Alice");
 
-	unmapped = ko.mapping.toJS(viewModel.reference);
-	equal(unmapped.id, 123);
-	equal(unmapped.name, "Alice");
+    unmapped = ko.mapping.toJS(viewModel.reference);
+    assert.equal(unmapped.id, 123);
+    assert.equal(unmapped.name, "Alice");
 
-	unmapped = ko.mapping.toJS(viewModel.reference());
-	equal(unmapped.id, 123);
-	equal(unmapped.name, "Alice");
+    unmapped = ko.mapping.toJS(viewModel.reference());
+    assert.equal(unmapped.id, 123);
+    assert.equal(unmapped.name, "Alice");
 });
 
-test('Issue #94', function() {
-	var model = { 
-	    prop: "original",
-	    obj: { 
-	        prop: "original", 
-	        obj: { 
-	            prop: "original" 
-	        } 
-	    }
-	};
-	var viewModel = ko.mapping.fromJS(model);
+QUnit.test('Issue #94', function(assert) {
+    var model = {
+        prop: "original",
+        obj: {
+            prop: "original",
+            obj: {
+                prop: "original"
+            }
+        }
+    };
+    var viewModel = ko.mapping.fromJS(model);
 
-	var modelUpdate = { 
-	    prop: "edit",
-	    obj: { 
-	        prop: "edit",
-	        obj: { 
-	            prop: "edit" 
-	        }
-	    }            
-	};
-	ko.mapping.fromJS(modelUpdate, { ignore: ["obj.prop", "obj.obj"] }, viewModel);
+    var modelUpdate = {
+        prop: "edit",
+        obj: {
+            prop: "edit",
+            obj: {
+                prop: "edit"
+            }
+        }
+    };
+    ko.mapping.fromJS(modelUpdate, {ignore: ["obj.prop", "obj.obj"]}, viewModel);
 
-	equal(viewModel.prop(), "edit");
-	equal(viewModel.obj.prop(), "original");
-	equal(viewModel.obj.obj.prop(), "original");
+    assert.equal(viewModel.prop(), "edit");
+    assert.equal(viewModel.obj.prop(), "original");
+    assert.equal(viewModel.obj.obj.prop(), "original");
 });
 
-asyncTest('Issue #99', function() {
-	var a = {
-		x : ko.observable().extend({ throttle: 1 })
-	};
+QUnit.test('Issue #99', function(assert) {
+    assert.expect(1);
+    var done = assert.async();
 
-	var receivedValue;
-	a.x.subscribe(function(value) {
-		receivedValue = value;
-	});
+    var a = {
+        x: ko.observable().extend({throttle: 1})
+    };
 
-	ko.mapping.fromJS({ x: 3 }, {}, a);
-	window.setTimeout(function() {
-		equal(receivedValue, 3);
-		start();
-	}, 2);
+    var receivedValue;
+    a.x.subscribe(function(value) {
+        receivedValue = value;
+    });
+
+    ko.mapping.fromJS({x: 3}, {}, a);
+    window.setTimeout(function() {
+        assert.equal(receivedValue, 3);
+        done();
+    }, 2);
 });
 
-test('Issue #33', function() {
-	var mapping = {
-	    'items': {
-	        key: function(data) {
-	            return ko.utils.unwrapObservable(data.id);
-	        },
-	        create: function(options) {
-	            var o = (new(function() {
-	                this._remove = function() {
-	                    options.parent.items.mappedRemove(options.data);
-	                };
-	                ko.mapping.fromJS(options.data, {}, this);
-	            })());
-	            return o;
-	        }
-	    }
-	};
+QUnit.test('Issue #33', function(assert) {
+    var mapping = {
+        'items': {
+            key: function(data) {
+                return ko.utils.unwrapObservable(data.id);
+            },
+            create: function(options) {
+                var o = (new (function() {
+                    this._remove = function() {
+                        options.parent.items.mappedRemove(options.data);
+                    };
+                    ko.mapping.fromJS(options.data, {}, this);
+                })());
+                return o;
+            }
+        }
+    };
 
-	var i = 0;
-	var vm = ko.mapping.fromJS({
-	    'items': [{
-	        id: ++i}]
-	}, mapping);
+    var i = 0;
+    var vm = ko.mapping.fromJS({
+        'items': [{
+            id: ++i
+        }]
+    }, mapping);
 
     vm.items.mappedCreate({
         id: ++i
     });
 
-    equal(vm.items().length, 2);
-	vm.items()[1]._remove();
+    assert.equal(vm.items().length, 2);
+    vm.items()[1]._remove();
 
-	equal(vm.items().length, 1);
-	vm.items()[0]._remove();
+    assert.equal(vm.items().length, 1);
+    vm.items()[0]._remove();
 
-	equal(vm.items().length, 0);
+    assert.equal(vm.items().length, 0);
 });
 
-test('Issue #86', function() {
-	var ViewModel = function() {
-		var _this = this;
-		this.filters = new FilterModel();
-		this.update = function(data) {
-			var mapping = {
-				filters: {
-					update: function(options) {
-						return options.target.update(options.data);
-					}
-				}
-			};
+QUnit.test('Issue #86', function(assert) {
+    var ViewModel = function() {
+        var _this = this;
+        this.filters = new FilterModel();
+        this.update = function(data) {
+            var mapping = {
+                filters: {
+                    update: function(options) {
+                        return options.target.update(options.data);
+                    }
+                }
+            };
+            ko.mapping.fromJS(data, mapping, _this);
+            return _this;
+        };
+    };
 
-			ko.mapping.fromJS(data, mapping, _this);
-			return _this;
-		};
-	};
+    var FilterModel = function() {
+        var _this = this;
+        this.a = ko.observable();
+        this.update = function(data) {
+            var mapping = {
+                a: {
+                    update: function(options) {
+                        return options.data + " modified";
+                    }
+                }
+            };
+            ko.mapping.fromJS(data, mapping, _this);
+            return _this;
+        };
+    };
 
-	var FilterModel = function() {
-		var _this = this;
-		this.a = ko.observable();
-		this.update = function(data) {
-			debugger;
-			var mapping = {
-				a: {
-					update: function(options) {
-						debugger;
-						return options.data + " modified";
-					}
-				}
-			};
-			ko.mapping.fromJS(data, mapping, _this);
-			return _this;
-		};
-	};
-
-	var model = new ViewModel();
-	model.update({ filters: { a: "a1" }});
-	equal(model.filters.a(), "a1 modified");
+    var model = new ViewModel();
+    model.update({filters: {a: "a1"}});
+    assert.equal(model.filters.a(), "a1 modified");
 });
 
 //https://github.com/SteveSanderson/knockout.mapping/issues/107
-test('Issue #107', function () {
-	var model = ko.mapping.fromJS({ foo: 'bar' }, {
-		fiz: 'applesauce'
-	});
+QUnit.test('Issue #107', function(assert) {
+    var model = ko.mapping.fromJS({foo: 'bar'}, {
+        fiz: 'applesauce'
+    });
 
-	ko.mapping.fromJS({ foo: 'baz' }, model);
+    ko.mapping.fromJS({foo: 'baz'}, model);
 
-	equal(model.foo(), "baz");
+    assert.equal(model.foo(), "baz");
+});
+
+QUnit.test('Issue #203', function(assert) {
+
+    var data = {type: 'nothing', connectionId: 1};
+    var viewModel = ko.mapping.fromJS(data);
+
+    ko.mapping.fromJS({type: 'thirdType', thirdTypeProperty: 'thirdTypeProperty'}, viewModel);
+
+    assert.deepEqual(ko.mapping.toJS(viewModel), {connectionId: 1, type: 'thirdType', thirdTypeProperty: 'thirdTypeProperty'});
 });
