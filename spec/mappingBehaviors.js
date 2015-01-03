@@ -256,27 +256,19 @@ QUnit.test('ko.mapping.defaultOptions should by default include the _destroy pro
 });
 
 QUnit.test('ko.mapping.defaultOptions.include should be an array', function(assert) {
-	var didThrow = false;
-	try {
-		ko.mapping.defaultOptions().include = {};
-		ko.mapping.toJS({});
-	}
-	catch (ex) {
-		didThrow = true
-	}
-    assert.equal(didThrow, true);
+    var fn = function() {
+        ko.mapping.defaultOptions().include = {};
+        ko.mapping.toJS({});
+    };
+    assert.throws(fn);
 });
 
 QUnit.test('ko.mapping.defaultOptions.ignore should be an array', function(assert) {
-	var didThrow = false;
-	try {
-		ko.mapping.defaultOptions().ignore = {};
-		ko.mapping.toJS({});
-	}
-	catch (ex) {
-		didThrow = true
-	}
-    assert.equal(didThrow, true);
+	var fn = function() {
+        ko.mapping.defaultOptions().ignore = {};
+        ko.mapping.toJS({});
+    };
+    assert.throws(fn);
 });
 
 QUnit.test('ko.mapping.defaultOptions can be set', function(assert) {
@@ -450,14 +442,7 @@ QUnit.test('ko.mapping.toJSON should unwrap everything and then stringify', func
 });
 
 QUnit.test('ko.mapping.fromJS should require a parameter', function (assert) {
-	var didThrow = false;
-	try {
-		ko.mapping.fromJS()
-	}
-	catch (ex) {
-		didThrow = true
-	}
-    assert.equal(didThrow, true);
+	assert.throws(ko.mapping.fromJS);
 });
 
 QUnit.test('ko.mapping.fromJS should return an observable if you supply an atomic value', function (assert) {
@@ -614,15 +599,15 @@ QUnit.test('ko.mapping.fromJS should not map the top-level non-atomic properties
 });
 
 QUnit.test('ko.mapping.fromJS should not map top-level objects on the supplied overriden model as observables', function (assert) {
-	var dummyObject = function (options) {
+	var DummyObject = function (options) {
 		this.a1 = options.a1;
 		return this;
-	}
+	};
 
 	var result = ko.mapping.fromJS({}, {
 		create: function(model) {
 			return {
-				a: new dummyObject({
+				a: new DummyObject({
 					a1: "Hello"
 				})
 			};
@@ -877,7 +862,9 @@ QUnit.test('ko.mapping.fromJS should send an added callback for every array item
 	var options = {
 		"a" : {
 			arrayChanged: function (event, newValue) {
-				if (event === "added") added.push(newValue);
+				if (event === "added") {
+                    added.push(newValue);
+                }
 			}
 		}
 	};
@@ -977,7 +964,9 @@ QUnit.test('ko.mapping.fromJS should send an added callback for every array item
 	}, {
 		"a": {
 			arrayChanged: function (event, newValue) {
-				if (event === "added") added.push(newValue);
+				if (event === "added") {
+                    added.push(newValue);
+                }
 			}
 		}
 	});
@@ -1048,8 +1037,9 @@ QUnit.test('ko.mapping.fromJS should send callbacks when atomic array elements a
 	var result = ko.mapping.fromJS(oldItems, {
 		"array": {
 			arrayChanged: function (event, item) {
-				if (event == "added")
-					items.push(item);
+				if (event === "added") {
+                    items.push(item);
+                }
 			}
 		}
 	});
@@ -1215,7 +1205,7 @@ QUnit.test('ko.mapping.fromJS should send a callback when adding new objects to 
 			return item.id;
 		},
 		arrayChanged: function (event, item) {
-			if (event == "added") {
+			if (event === "added") {
                 mappedItems.push(item);
             }
 		}
@@ -1457,15 +1447,11 @@ QUnit.test('observableArray.mappedCreate should use key callback if available an
 		}
 	});
 
-	var caught = false;
-	try {
-		result.mappedCreate({ id : 1 });
-	}
-	catch(e) {
-		caught = true;
-	}
+    var fn = function() {
+        result.mappedCreate({ id : 1 });
+    };
 
-	assert.equal(caught, true);
+	assert.throws(fn);
 	assert.equal(result().length, 2);
 });
 
@@ -1475,7 +1461,7 @@ QUnit.test('observableArray.mappedCreate should use create callback if available
 		{ id : 2 }
 	];
 
-	var childModel = function(data){
+	var ChildModel = function(data){
 		ko.mapping.fromJS(data, {}, this);
 		this.Hello = ko.observable("hello");
 	};
@@ -1485,7 +1471,7 @@ QUnit.test('observableArray.mappedCreate should use create callback if available
 			return ko.utils.unwrapObservable(item.id);
 		},
 		create: function(options){
-			return new childModel(options.data);
+			return new ChildModel(options.data);
 		}
 	});
 
@@ -1496,32 +1482,32 @@ QUnit.test('observableArray.mappedCreate should use create callback if available
 });
 
 QUnit.test('observableArray.mappedCreate should use update callback if available', function(assert) {
-	var obj = [
-		{ id : 1 },
-		{ id : 2 }
-	];
+    var obj = [
+        {id: 1},
+        {id: 2}
+    ];
 
-	var childModel = function(data){
-		ko.mapping.fromJS(data, {}, this);
-	};
+    var ChildModel = function(data) {
+        ko.mapping.fromJS(data, {}, this);
+    };
 
-	var result = ko.mapping.fromJS(obj, {
-		key: function(item) {
-			return ko.utils.unwrapObservable(item.id);
-		},
-		create: function(options){
-			return new childModel(options.data);
-		},
-		update: function(options){
-			return {
-				bla: options.data.id * 10
-			};
-		}
-	});
+    var result = ko.mapping.fromJS(obj, {
+        key: function(item) {
+            return ko.utils.unwrapObservable(item.id);
+        },
+        create: function(options) {
+            return new ChildModel(options.data);
+        },
+        update: function(options) {
+            return {
+                bla: options.data.id * 10
+            };
+        }
+    });
 
-	result.mappedCreate({ id: 3 });
-	assert.equal(result()[0].bla, 10);
-	assert.equal(result()[2].bla, 30);
+    result.mappedCreate({id: 3});
+    assert.equal(result()[0].bla, 10);
+    assert.equal(result()[2].bla, 30);
 });
 
 QUnit.test('ko.mapping.fromJS should merge options from subsequent calls', function(assert) {
@@ -1811,7 +1797,6 @@ QUnit.test('ko.mapping.fromJS should observe property in sub-object', function(a
 		}
 	};
 
-    debugger;
 	var result = ko.mapping.fromJS(data, { observe: "b.c" });
 	assert.equal(ko.isObservable(result.a), false);
 	assert.equal(ko.isObservable(result.b), false);

@@ -231,15 +231,10 @@
 
         QUnit.test('dependentObservables without a write callback do not get a write callback', function(assert) {
             var mapped = testInfo.create({useWriteCallback: false});
-
-            var caught = false;
-            try {
+            var fn = function() {
                 mapped.a.DO("hello");
-            }
-            catch (e) {
-                caught = true;
-            }
-            assert.equal(caught, true);
+            };
+            assert.throws(fn);
         });
 
         QUnit.test('undeferred dependentObservables that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
@@ -331,16 +326,16 @@
                             create: function(options) {
                                 //In KO writable computed observables have to be backed by an observable
                                 //otherwise they won't be notified they need updating. see: http://jsfiddle.net/drdamour/9Pz4m/
-                                var DOval = ko.observable(undefined);
+                                var _DOval = ko.observable(undefined);
 
                                 var m = {};
                                 m.myValue = ko.observable("myValue");
                                 m.DO = createComputed({
                                     read: function() {
-                                        return DOval();
+                                        return _DOval();
                                     },
                                     write: function(val) {
-                                        DOval(val);
+                                        _DOval(val);
                                     }
                                 });
                                 m.readOnlyDO = createComputed(function() {
@@ -486,7 +481,7 @@
                 }
             };
 
-            var inner = function(data) {
+            var Inner = function(data) {
                 var _this = this;
                 ko.mapping.fromJS(data, {}, _this);
 
@@ -503,7 +498,7 @@
             var mapping = {
                 inner: {
                     create: function(options) {
-                        return new inner(options.data);
+                        return new Inner(options.data);
                     }
                 }
             };
@@ -598,7 +593,7 @@
                 x: 1
             };
 
-            var model = function(data) {
+            var Model = function(data) {
                 var _this = this;
 
                 ko.mapping.fromJS(data, {}, _this);
@@ -608,7 +603,7 @@
 
             var mapping = {
                 create: function(options) {
-                    return new model(options.data);
+                    return new Model(options.data);
                 }
             };
 
@@ -616,7 +611,7 @@
 
             var mapped = ko.mapping.fromJS(obj, mapping);
 
-            assert.equal(mapped.DO.myExtension, true)
+            assert.equal(mapped.DO.myExtension, true);
         });
 
         QUnit.test('Dont wrap dependent observables if already marked as deferEvaluation', function(assert) {
@@ -660,10 +655,12 @@
             var result = ko.mapping.fromJS(obj, {
                 "items": {
                     create: function(options) {
-                        if (options.data.id == "b")
+                        if (options.data.id === "b") {
                             return options.data;
-                        else
+                        }
+                        else {
                             return options.skip;
+                        }
                     }
                 }
             });
@@ -687,10 +684,12 @@
             var result = ko.mapping.fromJS(obj, {
                 "items": {
                     create: function(options) {
-                        if (options.data.id == "b")
+                        if (options.data.id === "b") {
                             return options.skip;
-                        else
+                        }
+                        else {
                             return options.data;
+                        }
                     }
                 }
             });
