@@ -1,7 +1,11 @@
 'use strict';
 /*global ko, QUnit*/
 
-QUnit.module('Integration tests');
+QUnit.module('Integration tests', {
+    beforeEach: function() {
+        ko.mapping.resetDefaultOptions();
+    }
+});
 
 QUnit.test('Store', function(assert) {
     function Product(data) {

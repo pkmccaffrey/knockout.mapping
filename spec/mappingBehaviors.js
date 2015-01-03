@@ -1,7 +1,11 @@
 'use strict';
 /*global ko, QUnit*/
 
-QUnit.module('Mapping');
+QUnit.module('Mapping', {
+    beforeEach: function() {
+        ko.mapping.resetDefaultOptions();
+    }
+});
 
 QUnit.test('ko.mapping.toJS should unwrap observable values', function(assert) {
 	var atomicValues = ["hello", 123, true, null, undefined, {a: 1}];

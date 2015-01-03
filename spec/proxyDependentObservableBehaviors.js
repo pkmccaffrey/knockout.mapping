@@ -1,20 +1,25 @@
 (function() {
     'use strict';
-    /*global ko, QUnit,testStart*/
+    /*global ko, QUnit*/
 
-    var generateProxyTests = function(useComputed) {
+    function generateProxyTests(useComputed) {
         var moduleName = useComputed ? 'ProxyComputed' : 'ProxyDependentObservable';
         var testInfo;
 
-        QUnit.module(moduleName);
+        QUnit.module(moduleName, {
+            beforeEach: function() {
+                ko.mapping.resetDefaultOptions();
+                createTestInfo();
+            }
+        });
 
-        var func = function() {
+        function createComputed() {
             var result;
             result = useComputed ? ko.computed.apply(null, arguments) : ko.dependentObservable.apply(null, arguments);
             return result;
-        };
+        }
 
-        testStart[moduleName] = function() {
+        function createTestInfo() {
             testInfo = {
                 evaluationCount: 0,
                 writeEvaluationCount: 0
@@ -35,13 +40,13 @@
                                 return "test";
                             };
                             if (createOptions.useReadCallback) {
-                                mapped.DO = func({
+                                mapped.DO = createComputed({
                                     read: doData,
                                     deferEvaluation: !!createOptions.deferEvaluation
                                 }, mapped);
                             }
                             else if (createOptions.useWriteCallback) {
-                                mapped.DO = func({
+                                mapped.DO = createComputed({
                                     read: doData,
                                     write: function(value) {
                                         testInfo.written = value;
@@ -51,7 +56,7 @@
                                 }, mapped);
                             }
                             else {
-                                mapped.DO = func(doData, mapped, {
+                                mapped.DO = createComputed(doData, mapped, {
                                     deferEvaluation: !!createOptions.deferEvaluation
                                 });
                             }
@@ -63,7 +68,7 @@
 
                 return ko.mapping.fromJS(obj, mapping);
             };
-        };
+        }
 
         QUnit.test('ko.mapping.fromJS should handle interdependent dependent observables in objects', function(assert) {
             var obj = {
@@ -78,7 +83,7 @@
                     create: function(options) {
                         return {
                             a1: ko.observable(options.data.a1),
-                            observeB: func(function() {
+                            observeB: createComputed(function() {
                                 dependencyInvocations.push("a");
                                 return options.parent.b.b1();
                             })
@@ -89,7 +94,7 @@
                     create: function(options) {
                         return {
                             b1: ko.observable(options.data.b1),
-                            observeA: func(function() {
+                            observeA: createComputed(function() {
                                 dependencyInvocations.push("b");
                                 return options.parent.a.a1();
                             })
@@ -115,7 +120,7 @@
                     create: function(options) {
                         return {
                             a1: ko.observable(options.data.a1),
-                            observeB: func({
+                            observeB: createComputed({
                                 read: function() {
                                     dependencyInvocations.push("a");
                                     return options.parent.b.b1();
@@ -131,7 +136,7 @@
                     create: function(options) {
                         return {
                             b1: ko.observable(options.data.b1),
-                            observeA: func({
+                            observeA: createComputed({
                                 read: function() {
                                     dependencyInvocations.push("b");
                                     return options.parent.a.a1();
@@ -169,7 +174,7 @@
                     create: function(options) {
                         return {
                             id: ko.observable(options.data.id),
-                            observeParent: func(function() {
+                            observeParent: createComputed(function() {
                                 dependencyInvocations++;
                                 return options.parent.items().length;
                             })
@@ -202,7 +207,7 @@
             var mapped = ko.mapping.fromJS(obj, {
                 a: {
                     create: function() {
-                        var f = func(function() {
+                        var f = createComputed(function() {
                             dependency(dependency() + 1);
                             return dependency();
                         });
@@ -330,7 +335,7 @@
 
                                 var m = {};
                                 m.myValue = ko.observable("myValue");
-                                m.DO = func({
+                                m.DO = createComputed({
                                     read: function() {
                                         return DOval();
                                     },
@@ -338,7 +343,7 @@
                                         DOval(val);
                                     }
                                 });
-                                m.readOnlyDO = func(function() {
+                                m.readOnlyDO = createComputed(function() {
                                     return m.myValue();
                                 });
                                 return m;
@@ -370,7 +375,7 @@
                 var _this = this;
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     _this.dependency();
                 });
 
@@ -411,7 +416,7 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     //Depends on b, which may not be there yet
                     return _this.name() + parent.b.name();
                 });
@@ -422,7 +427,7 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     //depends on a, which may not be there yet
                     return _this.name() + parent.a.name();
                 });
@@ -485,7 +490,7 @@
                 var _this = this;
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     _this.dependency();
                 });
 
@@ -532,7 +537,7 @@
 
                 ko.mapping.fromJS(data, mapping, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     //Depends on b, which may not be there yet
                     return _this.name() + parent.b.name();
                 });
@@ -543,7 +548,7 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     //depends on a, which may not be there yet
                     return _this.name() + parent.a.name();
                 });
@@ -554,7 +559,7 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(function() {
+                _this.DO = createComputed(function() {
                     //depends on a, which may not be there yet
                     return _this.name() + parent.name() + grandparent.a.name() + grandparent.b.name();
                 });
@@ -598,7 +603,7 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO = func(_this.x);
+                _this.DO = createComputed(_this.x);
             };
 
             var mapping = {
@@ -624,9 +629,9 @@
 
                 ko.mapping.fromJS(data, {}, _this);
 
-                _this.DO1 = func(_this.x, null, {deferEvaluation: true});
-                _this.DO2 = func({read: _this.x, deferEvaluation: true});
-                _this.DO3 = func(_this.x);
+                _this.DO1 = createComputed(_this.x, null, {deferEvaluation: true});
+                _this.DO2 = createComputed({read: _this.x, deferEvaluation: true});
+                _this.DO3 = createComputed(_this.x);
             }
 
             var mapping = {
@@ -695,7 +700,7 @@
             assert.equal(result.items()[0].id, "a");
             assert.equal(result.items()[1].id, "c");
         });
-    };
+    }
 
     generateProxyTests(false);
     generateProxyTests(true);
