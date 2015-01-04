@@ -167,14 +167,6 @@
         return exports.fromJS.apply(this, args);
     };
 
-    exports.updateFromJS = function(viewModel) {
-        throw new Error("ko.mapping.updateFromJS, use ko.mapping.fromJS instead. Please note that the order of parameters is different!");
-    };
-
-    exports.updateFromJSON = function(viewModel) {
-        throw new Error("ko.mapping.updateFromJSON, use ko.mapping.fromJSON instead. Please note that the order of parameters is different!");
-    };
-
     exports.toJS = function(rootObject, options) {
         if (!defaultOptions) exports.resetDefaultOptions();
 
