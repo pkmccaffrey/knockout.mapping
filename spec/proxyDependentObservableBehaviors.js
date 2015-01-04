@@ -237,7 +237,7 @@
             assert.throws(fn);
         });
 
-        QUnit.test('undeferred dependentObservables that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
+        QUnit.test('un-deferred dependentObservables that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
             var done = assert.async();
             assert.expect(1);
 
@@ -248,7 +248,7 @@
             }, 0);
         });
 
-        QUnit.test('undeferred dependentObservables that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
+        QUnit.test('un-deferred dependentObservables that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
             var done = assert.async();
             assert.expect(2);
 
@@ -271,7 +271,7 @@
             }, 0);
         });
 
-        QUnit.test('undeferred dependentObservables with read callback that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
+        QUnit.test('un-deferred dependentObservables with read callback that are NOT used immediately SHOULD be auto-evaluated after mapping', function(assert) {
             var done = assert.async();
             assert.expect(1);
 
@@ -282,7 +282,7 @@
             }, 0);
         });
 
-        QUnit.test('undeferred dependentObservables with read callback that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
+        QUnit.test('un-deferred dependentObservables with read callback that ARE used immediately should NOT be auto-evaluated after mapping', function(assert) {
             var done = assert.async();
             assert.expect(2);
 
@@ -400,7 +400,7 @@
         });
 
         //taken from outline defined at https://github.com/SteveSanderson/knockout.mapping/issues/95#issuecomment-12275070
-        QUnit.test('dependentObservable evaluation is defferred until mapping takes place', function(assert) {
+        QUnit.test('dependentObservable evaluation is deferred until mapping takes place', function(assert) {
             var model = {
                 a: {name: "a"},
                 b: {name: "b"}
@@ -508,7 +508,7 @@
             assert.equal(i.evaluationCount, 1); //it's evaluated once prior to fromJS returning
         });
 
-        QUnit.test('dependentObservable evaluation for nested is defferred until after mapping takes place', function(assert) {
+        QUnit.test('dependentObservable evaluation for nested is deferred until after mapping takes place', function(assert) {
             var model = {
                 a: {
                     name: "a",
