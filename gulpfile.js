@@ -11,6 +11,7 @@ var uglify = require('gulp-uglify');
 var replace = require('gulp-replace');
 var rename = require('gulp-rename');
 var header = require('gulp-header');
+var sourceMaps = require('gulp-sourcemaps');
 var n = {
     path: require('path')
 };
@@ -42,7 +43,9 @@ gulp.task('build', function() {
         .pipe(gulp.dest(buildConfig.outputPath))
         .pipe(rename('knockout.mapping.min.js'))
         .pipe(replace(/(:?var\s*?DEBUG\s*?=\s*?true)/, 'const DEBUG=false'))
+        .pipe(sourceMaps.init())
         .pipe(uglify({preserveComments: 'some'}))
+        .pipe(sourceMaps.write('./'))
         .pipe(gulp.dest(buildConfig.outputPath));
 });
 
