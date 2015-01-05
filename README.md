@@ -43,7 +43,20 @@ viewModel.addresses()[0].city('Bucharest');
 // Retrieve the updated data (as JS object)
 var newData = ko.mapping.toJS(viewModel);
 
+// newData now looks like this
+{
+  email: 'demo2@example.com',
+  name: 'demo2',
+  addresses: [
+    { type: 'home', country: 'Romania', city: 'Bucharest' },
+    { type: 'work', country: 'Spain', city: 'Barcelona' }
+  ]
+}
+
 ```
+
+Run this example in [JSFiddle](http://jsfiddle.net/wmeqx7ss/).
+
 
 ## Test
 
