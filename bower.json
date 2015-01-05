@@ -4,7 +4,9 @@
   "version": "2.4.1",
   "homepage": "https://github.com/crissdev/knockout.mapping",
   "authors": [
-    "crissdev <criss.trifan@gmail.com>"
+    "Steven Sanderson",
+    "Roy Jacobs",
+    "Cristian Trifan <criss.trifan@gmail.com>"
   ],
   "description": "Knockout Mapping plugin",
   "keywords": [
