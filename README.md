@@ -10,6 +10,15 @@
 Official documentation [here](http://knockoutjs.com/documentation/plugins-mapping.html).
 
 
+## Install
+
+#### Bower
+
+```sh
+bower install bower-knockout-mapping --save-dev
+```
+
+
 ## Quick Start
 
 ```js

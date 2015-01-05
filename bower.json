@@ -1,0 +1,28 @@
+{
+  "name": "bower-knockout-mapping",
+  "main": "knockout.mapping.js",
+  "version": "2.4.1",
+  "homepage": "https://github.com/crissdev/knockout.mapping",
+  "authors": [
+    "crissdev <criss.trifan@gmail.com>"
+  ],
+  "description": "Knockout Mapping plugin",
+  "keywords": [
+    "knockout",
+    "mapping",
+    "knockout-mapping",
+    "knockout.mapping",
+    "plugin",
+    "ko"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "spec",
+    "gulpfile.js"
+  ],
+  "dependencies": {
+    "knockout": "^3.0.0"
+  }
+}
