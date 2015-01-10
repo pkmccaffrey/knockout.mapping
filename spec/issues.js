@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 /*global ko, QUnit*/
 
@@ -241,12 +242,13 @@ QUnit.test('Issue #33', function(assert) {
                 return ko.utils.unwrapObservable(data.id);
             },
             create: function(options) {
-                var o = (new (function() {
+                function SimpleObject() {
                     this._remove = function() {
                         options.parent.items.mappedRemove(options.data);
                     };
                     ko.mapping.fromJS(options.data, {}, this);
-                })());
+                }
+                var o = new SimpleObject();
                 return o;
             }
         }
@@ -330,3 +332,4 @@ QUnit.test('Issue #203', function(assert) {
 
     assert.deepEqual(ko.mapping.toJS(viewModel), {connectionId: 1, type: 'thirdType', thirdTypeProperty: 'thirdTypeProperty'});
 });
+})();

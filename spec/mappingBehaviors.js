@@ -1,3 +1,4 @@
+(function() {
 'use strict';
 /*global ko, QUnit*/
 
@@ -1009,14 +1010,14 @@ QUnit.test('ko.mapping.fromJS should be able to map empty object structures', fu
 QUnit.test('ko.mapping.fromJS should send create callbacks when atomic items are constructed', function (assert) {
 	var atomicValues = ["hello", 123, true, null, undefined];
 	var callbacksReceived = 0;
-	for (var i = 0; i < atomicValues.length; i++) {
-		var result = ko.mapping.fromJS(atomicValues[i], {
-			create: function (item) {
-				callbacksReceived++;
-				return item;
-			}
-		});
-	}
+    atomicValues.forEach(function(value) {
+        var result = ko.mapping.fromJS(value, {
+            create: function (item) {
+                callbacksReceived++;
+                return item;
+            }
+        });
+    });
     assert.equal(callbacksReceived, 5);
 });
 
@@ -1836,3 +1837,4 @@ QUnit.test('ko.mapping.toJS explicit declared none observable members should be 
 
     assert.equal(js.b, data.b);
 });
+})();
