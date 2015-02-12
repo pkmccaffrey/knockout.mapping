@@ -2,7 +2,6 @@
 /*jshint node:true*/
 
 var gulp = require('gulp');
-var gutil = require('gulp-util');
 var del = require('del');
 var qunit = require('gulp-qunit');
 var plumber = require('gulp-plumber');
@@ -12,9 +11,6 @@ var replace = require('gulp-replace');
 var rename = require('gulp-rename');
 var header = require('gulp-header');
 var sourceMaps = require('gulp-sourcemaps');
-var n = {
-    path: require('path')
-};
 
 var buildConfig = {
     outputPath: 'dist',
@@ -30,7 +26,6 @@ var buildConfig = {
 
 
 gulp.task('clear', function() {
-    gutil.log('cleaning output directory', gutil.colors.magenta(n.path.resolve(buildConfig.outputPath)));
     del.sync('*', {cwd: 'dist'});
 });
 

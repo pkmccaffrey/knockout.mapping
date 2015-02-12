@@ -14,11 +14,16 @@
     }
     else {
         // <script> tag: use the global `ko` object, attaching a `mapping` property
+        if (typeof ko === 'undefined') {
+            throw new Error('Knockout is required, please ensure it is loaded before loading this mapping plug-in');
+        }
         factory(ko, ko.mapping = {});
     }
 }(function(ko, exports) {
     /*jshint sub:true,curly:false*/
     'use strict';
+
+    ko.mapping = exports;
 
     var DEBUG=true;
     var mappingProperty = "__ko_mapping__";
