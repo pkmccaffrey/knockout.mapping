@@ -18,6 +18,12 @@ Official documentation [here](http://knockoutjs.com/documentation/plugins-mappin
 bower install bower-knockout-mapping --save-dev
 ```
 
+#### NPM
+
+```sh
+npm install knockout-mapping --save
+```
+
 
 ## Quick Start
 
