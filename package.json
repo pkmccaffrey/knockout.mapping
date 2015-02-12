@@ -1,6 +1,6 @@
 {
   "name": "knockout-mapping",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "description": "Knockout Mapping plugin",
   "main": "dist/knockout.mapping.js",
   "files": [
@@ -16,7 +16,7 @@
     "ko"
   ],
   "peerDependencies": {
-    "knockout": ">=2.3.0"
+    "knockout": ">=2.2.0"
   },
   "devDependencies": {
     "del": "^1.1.1",

@@ -1,7 +1,7 @@
 {
   "name": "bower-knockout-mapping",
-  "main": "knockout.mapping.js",
-  "version": "2.4.1",
+  "main": "dist/knockout.mapping.js",
+  "version": "2.5.0",
   "homepage": "https://github.com/crissdev/knockout.mapping",
   "authors": [
     "Steven Sanderson",
@@ -22,9 +22,10 @@
     "**/.*",
     "node_modules",
     "spec",
-    "gulpfile.js"
+    "gulpfile.js",
+    "knockout.mapping.js"
   ],
   "dependencies": {
-    "knockout": "^3.0.0"
+    "knockout": ">=2.2.0"
   }
 }
