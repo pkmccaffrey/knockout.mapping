@@ -1,6 +1,6 @@
 # knockout.mapping
 
-[![Build Status](https://travis-ci.org/crissdev/knockout.mapping.png?branch=master)](https://travis-ci.org/crissdev/knockout.mapping)
+[![Build Status](https://travis-ci.org/crissdev/knockout.mapping.svg?branch=master)](https://travis-ci.org/crissdev/knockout.mapping)
 
 > Object mapping plugin for [Knockout](http://knockoutjs.com/)
 
