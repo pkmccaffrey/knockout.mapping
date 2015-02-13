@@ -831,7 +831,7 @@
             }
 
             var bucket = buckets[bucketKey];
-            if (bucket === undefined) {
+            if (!buckets.hasOwnProperty(bucketKey)) {
                 bucket = new SimpleObjectLookup();
                 buckets[bucketKey] = bucket;
             }

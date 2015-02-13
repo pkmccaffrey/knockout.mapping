@@ -332,4 +332,11 @@ QUnit.test('Issue #203', function(assert) {
 
     assert.deepEqual(ko.mapping.toJS(viewModel), {connectionId: 1, type: 'thirdType', thirdTypeProperty: 'thirdTypeProperty'});
 });
+
+//https://github.com/SteveSanderson/knockout.mapping/issues/124
+QUnit.test('Issue #124', function(assert) {
+    var model = ko.mapping.fromJS({ foo: 'constructor' });
+    assert.equal(model.foo(), 'constructor');
+});
+
 })();
