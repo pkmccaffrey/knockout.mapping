@@ -442,6 +442,15 @@ QUnit.test('ko.mapping.toJSON should unwrap everything and then stringify', func
 	assert.equal(parsedResult[2].someProp, 'Hey');
 });
 
+QUnit.test('ko.mapping.toJSON should allow JSON.stringify parameters', function(assert) {
+    var data = {
+        prop1: ko.observable('abc'),
+        prop2: ko.observable(10)
+    };
+    var result = ko.mapping.toJSON(data, {}, null, '\t');
+    assert.equal(result, '{\n\t"prop1": "abc",\n\t"prop2": 10\n}');
+});
+
 QUnit.test('ko.mapping.fromJS should require a parameter', function (assert) {
 	assert.throws(ko.mapping.fromJS);
 });

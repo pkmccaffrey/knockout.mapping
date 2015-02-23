@@ -184,9 +184,9 @@
         }, options);
     };
 
-    exports.toJSON = function(rootObject, options) {
+    exports.toJSON = function(rootObject, options, replacer, space) {
         var plainJavaScriptObject = exports.toJS(rootObject, options);
-        return ko.utils.stringifyJson(plainJavaScriptObject);
+        return ko.utils.stringifyJson(plainJavaScriptObject, replacer, space);
     };
 
     exports.defaultOptions = function() {

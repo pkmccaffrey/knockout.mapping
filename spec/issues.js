@@ -215,6 +215,24 @@ QUnit.test('Issue #94', function(assert) {
     assert.equal(viewModel.obj.obj.prop(), "original");
 });
 
+QUnit.test('Issue #96', function(assert) {
+
+    var data = {
+        a: {
+            b: 123
+        },
+        'a.b': 456
+    };
+
+    var viewModel = ko.mapping.fromJS(data, {ignore: 'a.b'});
+    var js = ko.mapping.toJS(viewModel);
+
+    assert.equal(ko.isObservable(viewModel['a.b']), true);
+    assert.equal(viewModel.a.b, undefined);
+    assert.equal(js['a.b'], 456);
+    assert.equal(js.a.b, undefined);
+});
+
 QUnit.test('Issue #99', function(assert) {
     assert.expect(1);
     var done = assert.async();
@@ -337,24 +355,6 @@ QUnit.test('Issue #203', function(assert) {
 QUnit.test('Issue #124', function(assert) {
     var model = ko.mapping.fromJS({ foo: 'constructor' });
     assert.equal(model.foo(), 'constructor');
-});
-
-QUnit.test('Mapping options that target properties of sub-objects should not apply to properties of the root object', function(assert) {
-
-    var data = {
-        a: {
-            b: 123
-        },
-        'a.b': 456
-    };
-
-    var viewModel = ko.mapping.fromJS(data, {ignore: 'a.b'});
-    var js = ko.mapping.toJS(viewModel);
-
-    assert.equal(ko.isObservable(viewModel['a.b']), true);
-    assert.equal(viewModel.a.b, undefined);
-    assert.equal(js['a.b'], 456);
-    assert.equal(js.a.b, undefined);
 });
 
 })();
