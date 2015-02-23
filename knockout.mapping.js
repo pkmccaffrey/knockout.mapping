@@ -469,7 +469,7 @@
 
                 // For non-atomic types, visit all properties and update recursively
                 visitPropertiesOrArrayEntries(rootObject, function(indexer) {
-                    var fullPropertyName = parentPropertyName.length ? parentPropertyName + "." + indexer : indexer;
+                    var fullPropertyName = parentPropertyName.length ? parentPropertyName + "." + escapePropertyNameComponent(indexer) : escapePropertyNameComponent(indexer);
 
                     if (ko.utils.arrayIndexOf(options.ignore, fullPropertyName) !== -1) {
                         return;
@@ -618,7 +618,8 @@
             for (i = 0, j = editScript.length; i < j; i++) {
                 key = editScript[i];
                 var mappedItem;
-                var fullPropertyName = parentPropertyName + "[" + i + "]";
+                var fullPropertyName = parentPropertyName + "[" + escapePropertyNameComponent(i) + "]";
+
                 switch (key.status) {
                     case "added":
                         item = optimizedKeys ? itemsByKey[key.value] : getItemByKey(ko.utils.unwrapObservable(rootObject), key.value, keyCallback);
@@ -735,17 +736,27 @@
         var propertyName = parentName || "";
         if (exports.getType(parent) === "array") {
             if (parentName) {
-                propertyName += "[" + indexer + "]";
+                propertyName += "[" + escapePropertyNameComponent(indexer) + "]";
             }
         }
         else {
             if (parentName) {
                 propertyName += ".";
             }
-            propertyName += indexer;
+            propertyName += escapePropertyNameComponent(indexer);
         }
         return propertyName;
     }
+
+    function escapePropertyNameComponent(indexer) {
+        var escapedIndexer  = (''+indexer)
+            .replace(/~/g, '~~')
+            .replace(/\[/g, '~[')
+            .replace(/]/g, '~]')
+            .replace(/\./g, '~.');
+        return escapedIndexer;
+    }
+
 
     exports.visitModel = function(rootObject, callback, options) {
         options = options || {};
@@ -769,23 +780,24 @@
 
         var parentName = options.parentName;
         visitPropertiesOrArrayEntries(unwrappedRootObject, function(indexer) {
-            if (options.ignore && ko.utils.arrayIndexOf(options.ignore, indexer) !== -1) return;
+            var escapedIndexer = escapePropertyNameComponent(indexer);
+            if (options.ignore && ko.utils.arrayIndexOf(options.ignore, escapedIndexer) != -1) return;
 
             var propertyValue = unwrappedRootObject[indexer];
             options.parentName = getPropertyName(parentName, unwrappedRootObject, indexer);
 
             // If we don't want to explicitly copy the unmapped property...
-            if (ko.utils.arrayIndexOf(options.copy, indexer) === -1) {
+            if (ko.utils.arrayIndexOf(options.copy, escapedIndexer) === -1) {
                 // ...find out if it's a property we want to explicitly include
-                if (ko.utils.arrayIndexOf(options.include, indexer) === -1) {
+                if (ko.utils.arrayIndexOf(options.include, escapedIndexer) === -1) {
                     // The mapped properties object contains all the properties that were part of the original object.
                     // If a property does not exist, and it is not because it is part of an array (e.g. "myProp[3]"), then it should not be unmapped.
                     var unwrappedRootMappingProperty = unwrappedRootObject[mappingProperty];
                     if (unwrappedRootMappingProperty) {
                         var mappedProperties = unwrappedRootMappingProperty.mappedProperties;
-                        if (mappedProperties && !mappedProperties[indexer]) {
+                        if (mappedProperties && !mappedProperties[escapedIndexer]) {
                             var copiedProperties = unwrappedRootMappingProperty.copiedProperties;
-                            if (copiedProperties && !copiedProperties[indexer] && (exports.getType(unwrappedRootObject) !== "array")) {
+                            if (copiedProperties && !copiedProperties[escapedIndexer] && (exports.getType(unwrappedRootObject) !== "array")) {
                                 return;
                             }
                         }
