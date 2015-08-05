@@ -1,10 +1,3 @@
-*.suo
-*.csproj.user
-bin
-obj
-*.pdb
-_ReSharper*
-*.ReSharper.user
-*.ReSharper
-desktop.ini
-.eprj
+.idea
+node_modules
+npm-debug.log

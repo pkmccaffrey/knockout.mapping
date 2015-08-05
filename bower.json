@@ -1,0 +1,31 @@
+{
+  "name": "bower-knockout-mapping",
+  "main": "dist/knockout.mapping.js",
+  "version": "2.5.0",
+  "homepage": "https://github.com/crissdev/knockout.mapping",
+  "authors": [
+    "Steven Sanderson",
+    "Roy Jacobs",
+    "Cristian Trifan <criss.trifan@gmail.com>"
+  ],
+  "description": "Knockout Mapping plugin",
+  "keywords": [
+    "knockout",
+    "mapping",
+    "knockout-mapping",
+    "knockout.mapping",
+    "plugin",
+    "ko"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "spec",
+    "gulpfile.js",
+    "knockout.mapping.js"
+  ],
+  "dependencies": {
+    "knockout": ">=2.2.0"
+  }
+}
