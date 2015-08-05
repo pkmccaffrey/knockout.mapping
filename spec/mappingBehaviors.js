@@ -319,7 +319,7 @@ test('recognized root-level options should be moved into a root namespace, leavi
 	};
 	
 	// Test that the non-recognized root-level and descendant mappings were left in place
-	for(property in mapping) {
+	for(var property in mapping) {
 		window[recognizedRootProperties.indexOf(property) == -1 ? 'deepEqual' : 'notDeepEqual'](resultantMapping[property], mapping[property]);
 	};
 });
