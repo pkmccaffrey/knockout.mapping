@@ -1,31 +1,10 @@
 # knockout.mapping
 
-[![Build Status](https://travis-ci.org/crissdev/knockout.mapping.svg?branch=master)](https://travis-ci.org/crissdev/knockout.mapping)
-[![npm version](https://badge.fury.io/js/knockout-mapping.svg)](http://badge.fury.io/js/knockout-mapping)
-
-
-> Object mapping plugin for [Knockout](http://knockoutjs.com/)
-
+> Object mapping plugin for [Knockout](http://knockoutjs.com/).  This fork of the [original plugin](https://github.com/SteveSanderson/knockout.mapping) contains bugfixes from various other forks.  The goal of this repo is to maintain the existing code (and fix any issues with it), as well as implement new features as needed.
 
 ## Documentation
 
-Official documentation [here](http://knockoutjs.com/documentation/plugins-mapping.html).
-
-
-## Install
-
-#### Bower
-
-```sh
-bower install bower-knockout-mapping --save-dev
-```
-
-#### NPM
-
-```sh
-npm install knockout-mapping --save
-```
-
+Documentation lives [here](http://knockoutjs.com/documentation/plugins-mapping.html).  It was written for the original (SteveSanderson) plugin, but should still be accurate.
 
 ## Quick Start
 
@@ -63,14 +42,10 @@ var newData = ko.mapping.toJS(viewModel);
 
 ```
 
-Run this example in [JSFiddle](http://jsfiddle.net/wmeqx7ss/).
-
-
 ## Test
 
 Continuous Integration tests are done with Travis, and the associated Gulp task is `test-ci`.
 For development `test` task is used, which runs the tests against the latest version of Knockout.
-
 
 ## License
 
