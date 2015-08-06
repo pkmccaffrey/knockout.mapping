@@ -31,7 +31,7 @@
     var mappingNesting = 0;
     var dependentObservables;
     var visitedObjects;
-    var recognizedRootProperties = ["create", "update", "key", "arrayChanged"];
+    var recognizedRootProperties = ["create", "update", "postUpdate", "key", "arrayChanged"];
     var emptyReturn = {};
 
     var _defaultOptions = {
@@ -381,6 +381,24 @@
             return options[parentName].update(params);
         };
 
+        var hasPostUpdateCallback = function () {
+            return options[parentName] && options[parentName].postUpdate instanceof Function;
+        };
+
+        var postUpdateCallback = function (obj, data) {
+            var params = {
+                data: data || callbackParams.data,
+                parent: callbackParams.parent,
+                target: ko.utils.unwrapObservable(obj)
+            };
+
+            if (ko.isWriteableObservable(obj)) {
+                params.observable = obj;
+            }
+
+            return options[parentName].postUpdate(params);
+        };
+
         var alreadyMapped = visitedObjects.get(rootObject);
         if (alreadyMapped) {
             return alreadyMapped;
@@ -389,9 +407,8 @@
         parentName = parentName || "";
 
         if (!isArray) {
-            // For atomic types, do a direct update on the observable
-            if (!canHaveProperties(rootObject)) {
 
+            if (!canHaveProperties(rootObject)) { // For atomic types, do a direct update on the observable
                 switch (exports.getType(rootObject)) {
                     case "function":
                         if (hasUpdateCallback()) {
@@ -404,38 +421,31 @@
                         } else {
                             mappedRootObject = rootObject;
                         }
+                        if (hasPostUpdateCallback()) {
+                            postUpdateCallback(mappedRootObject);
+                        }
                         break;
                     default:
                         if (ko.isWriteableObservable(mappedRootObject)) {
-                            var valueToWrite;
-                            if (hasUpdateCallback()) {
-                                valueToWrite = updateCallback(mappedRootObject);
-                                mappedRootObject(valueToWrite);
-                                return valueToWrite;
-                            } else {
-                                valueToWrite = ko.utils.unwrapObservable(rootObject);
-                                mappedRootObject(valueToWrite);
-                                return valueToWrite;
+                            var valueToWrite = hasUpdateCallback() ? updateCallback(mappedRootObject) : ko.utils.unwrapObservable(rootObject);
+                            mappedRootObject(valueToWrite);
+                            if (hasPostUpdateCallback()) {
+                                postUpdateCallback(mappedRootObject);
                             }
+                            return valueToWrite;
                         } else {
-                            var hasCreateOrUpdateCallback = hasCreateCallback() || hasUpdateCallback();
-
-                            if (hasCreateCallback()) {
-                                mappedRootObject = createCallback();
-                            } else {
-                                mappedRootObject = ko.observable(ko.utils.unwrapObservable(rootObject));
+                            var hasCreateCallback = hasCreateCallback();
+                            var hasUpdateCallback = hasUpdateCallback();
+                            mappedRootObject = hasCreateCallback ? createCallback() : ko.observable(ko.utils.unwrapObservable(rootObject));
+                            if (hasUpdateCallback) {
+                                mappedRootObject = mappedRootObject(updateCallback(mappedRootObject));
                             }
-
-                            if (hasUpdateCallback()) {
-                                mappedRootObject(updateCallback(mappedRootObject));
+                            if (hasPostUpdateCallback()) {
+                                postUpdateCallback(mappedRootObject);
                             }
-
-                            if (hasCreateOrUpdateCallback) return mappedRootObject;
                         }
                 }
-
-            } else {
-
+            } else { // For non-atomic types, visit all properties and update recursively
                 mappedRootObject = ko.utils.unwrapObservable(mappedRootObject);
                 if (!mappedRootObject) {
                     if (hasCreateCallback()) {
@@ -443,12 +453,12 @@
                         if (hasUpdateCallback()) {
                             result = updateCallback(result);
                         }
+                        if (hasPostUpdateCallback()) {
+                            postUpdateCallback(result);
+                        }
                         return result;
                     } else {
-                        if (hasUpdateCallback()) {
-                            //Removed ambiguous parameter result
-                            return updateCallback();
-                        }
+                        var result = hasUpdateCallback() ? updateCallback(result) : undefined;
                         mappedRootObject = {};
                     }
                 }
@@ -458,9 +468,11 @@
                 }
 
                 visitedObjects.save(rootObject, mappedRootObject);
-                if (hasUpdateCallback()) return mappedRootObject;
 
-                // For non-atomic types, visit all properties and update recursively
+                if (hasUpdateCallback()) {
+                    return mappedRootObject;
+                }
+
                 visitPropertiesOrArrayEntries(rootObject, function (indexer) {
                     var fullPropertyName = parentPropertyName.length ? parentPropertyName + "." + escapePropertyNameComponent(indexer) : escapePropertyNameComponent(indexer);
 
@@ -504,6 +516,10 @@
 
                     options.mappedProperties[fullPropertyName] = true;
                 });
+
+                if (hasPostUpdateCallback()) {
+                    postUpdateCallback(mappedRootObject);
+                }
             }
         } else { //mappedRootObject is an array
 
@@ -520,6 +536,7 @@
             }
 
             if (!ko.isObservable(mappedRootObject)) {
+
                 // When creating the new observable array, also add a bunch of utility functions that take the 'key' of the array items into account.
                 mappedRootObject = ko.observableArray([]);
                 mappedRootObject.mappedRemove = function (valueOrPredicate) {
@@ -576,6 +593,9 @@
                         } else {
                             item = newValue;
                         }
+                    }
+                    if (hasPostUpdateCallback()) {
+                        postUpdateCallback(item);
                     }
                     mappedRootObject.push(item);
                     return item;
