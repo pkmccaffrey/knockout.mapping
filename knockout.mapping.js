@@ -438,7 +438,7 @@
                             var hasUpdateCallback = hasUpdateCallback();
                             mappedRootObject = hasCreateCallback ? createCallback() : ko.observable(ko.utils.unwrapObservable(rootObject));
                             if (hasUpdateCallback) {
-                                mappedRootObject = mappedRootObject(updateCallback(mappedRootObject));
+                                mappedRootObject(updateCallback(mappedRootObject));
                             }
                             if (hasPostUpdateCallback()) {
                                 postUpdateCallback(mappedRootObject);
